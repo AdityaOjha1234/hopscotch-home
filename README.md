@@ -1,5 +1,9 @@
 # Hopscotch Home (Flutter Web)
 
+Live demo: https://adityaojha1234.github.io/hopscotch-home/
+
+
+
 A Flutter implementation of a Hopscotch-style kids fashion **homepage only** (header with search and cart,
 category nav, auto-sliding banner, shop-by-category, trending and new-arrival product rows, footer).
 It uses dummy data and placeholder icons instead of real product images.

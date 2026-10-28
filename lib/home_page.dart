@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'api_service.dart';
 import 'dummy_data.dart';
 import 'theme.dart';
 
@@ -78,9 +79,9 @@ class HomePage extends StatelessWidget {
                     SectionTitle('Shop by Category'),
                     CategoryGrid(),
                     SectionTitle('Trending Now'),
-                    ProductRow(products: trendingProducts),
+                    ApiProductRow(skip: 0, fallback: trendingProducts),
                     SectionTitle('New Arrivals'),
-                    ProductRow(products: newArrivals),
+                    ApiProductRow(skip: 8, fallback: newArrivals),
                     SizedBox(height: 24),
                   ],
                 ),
@@ -292,6 +293,59 @@ class CategoryGrid extends StatelessWidget {
   }
 }
 
+/// Loads products from the API. Shows a spinner while loading, and falls back
+/// to the local sample data if the API call fails.
+class ApiProductRow extends StatefulWidget {
+  const ApiProductRow({super.key, required this.skip, required this.fallback});
+
+  final int skip;
+  final List<Product> fallback;
+
+  @override
+  State<ApiProductRow> createState() => _ApiProductRowState();
+}
+
+class _ApiProductRowState extends State<ApiProductRow> {
+  late final Future<List<Product>> _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = ApiService.fetchProducts(skip: widget.skip);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<Product>>(
+      future: _future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const SizedBox(
+            height: 300,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError || (snapshot.data?.isEmpty ?? true)) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Could not load live data, showing sample products.',
+                  style: TextStyle(color: AppColors.muted, fontSize: 12),
+                ),
+              ),
+              ProductRow(products: widget.fallback),
+            ],
+          );
+        }
+        return ProductRow(products: snapshot.data!);
+      },
+    );
+  }
+}
+
 /// Horizontally scrolling row of product cards.
 class ProductRow extends StatelessWidget {
   const ProductRow({super.key, required this.products});
@@ -397,13 +451,13 @@ class ProductCard extends StatelessWidget {
                     Row(
                       children: [
                         Text(
-                          'Rs. ${product.price}',
+                          product.priceText,
                           style: const TextStyle(
                               fontWeight: FontWeight.w800, fontSize: 15),
                         ),
                         const SizedBox(width: 6),
                         Text(
-                          'Rs. ${product.mrp}',
+                          product.mrpText,
                           style: const TextStyle(
                             fontSize: 12,
                             color: AppColors.muted,

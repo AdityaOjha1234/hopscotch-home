@@ -8,16 +8,56 @@ class Product {
     required this.mrp,
     required this.icon,
     required this.color,
+    this.currency = 'Rs. ',
   });
 
   final String name;
   final String brand;
-  final int price;
-  final int mrp;
+  final double price;
+  final double mrp;
   final IconData icon;
   final Color color;
+  final String currency;
 
   int get discount => (((mrp - price) / mrp) * 100).round();
+
+  static String _fmt(double v) =>
+      v == v.roundToDouble() ? v.toStringAsFixed(0) : v.toStringAsFixed(2);
+
+  String get priceText => '$currency${_fmt(price)}';
+  String get mrpText => '$currency${_fmt(mrp)}';
+
+  /// Builds a Product from one item of the DummyJSON /products response.
+  factory Product.fromJson(Map<String, dynamic> json, int index) {
+    final price = (json['price'] as num).toDouble();
+    final discountPct = ((json['discountPercentage'] ?? 10) as num).toDouble();
+    final safePct = discountPct.clamp(1.0, 90.0).toDouble();
+    return Product(
+      name: (json['title'] ?? 'Product') as String,
+      brand: (json['brand'] ?? json['category'] ?? '') as String,
+      price: price,
+      mrp: price / (1 - safePct / 100),
+      icon: _icons[index % _icons.length],
+      color: _colors[index % _colors.length],
+      currency: '\$',
+    );
+  }
+
+  static const List<IconData> _icons = [
+    Icons.checkroom,
+    Icons.toys,
+    Icons.directions_walk,
+    Icons.child_friendly,
+  ];
+
+  static const List<Color> _colors = [
+    Color(0xFFDCEBFF),
+    Color(0xFFFFDCEB),
+    Color(0xFFFFF1C9),
+    Color(0xFFDDF5E3),
+    Color(0xFFEBDDFB),
+    Color(0xFFFFE3D6),
+  ];
 }
 
 class BannerItem {
